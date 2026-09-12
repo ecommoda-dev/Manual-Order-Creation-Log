@@ -1,4 +1,4 @@
-name               = "draft-to-live-cod-manual-order-creation-worker"
+name               = "manual-order-creation-worker"
 main               = "index.js"
 compatibility_date = "2025-01-01"
 workers_dev        = true
