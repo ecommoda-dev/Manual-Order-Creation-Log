@@ -11,8 +11,8 @@
 
 ```
 الواجهة    : https://ecommoda-dev.github.io/Manual-Order-Creation-Log/
-الـ Worker : https://draft-to-live-cod-manual-order-creation-worker.ecommoda-dev.workers.dev
-اسم الـ Worker في الداشبورد: draft-to-live-cod-manual-order-creation-worker
+الـ Worker : https://manual-order-creation-worker.ecommoda-dev.workers.dev
+اسم الـ Worker في الداشبورد: manual-order-creation-worker
 ```
 
 ## نقطة الدخول الحقيقية — مش الواجهة
