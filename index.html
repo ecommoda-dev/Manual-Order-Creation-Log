@@ -309,6 +309,16 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text-p
       <div class="cl-version-block">
         <div class="cl-version-row">
           <span class="cl-ver-badge" id="clLatestVerBadge"></span>
+          <span class="cl-ver-date">21-08-2026</span>
+        </div>
+        <ul class="cl-items">
+          <li class="cl-item"><span class="cl-tag change">تغيير</span><span>ملاحظة تحويل الخصم لم تعد تُكتب على الأوردر — التفاصيل الكاملة محفوظة في سجل D1 داخل <code>extra.discountInfo</code> (شامل النص الكامل في <code>noteText</code>). ملاحظة العميل الأصلية وحدها هي التي تُنقل.</span></li>
+          <li class="cl-item"><span class="cl-tag fix">إصلاح</span><span>الصفوف بلا اسم أوردر (فشل HMAC، أو Draft محذوف) كانت تعرض النص الحرفي <code>null#</code> في عمود «الأوردر» — أصبحت تعرض «—».</span></li>
+        </ul>
+      </div>
+      <div class="cl-version-block">
+        <div class="cl-version-row">
+          <span class="cl-ver-badge old">v1.0.0</span>
           <span class="cl-ver-date">20-08-2026</span>
         </div>
         <ul class="cl-items">
@@ -342,7 +352,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text-p
             <li>تفحص تاج <code>_worker_clone</code> — لو موجود (Draft من stylebox-shopify-order-transfer-worker) تتجاهله.</li>
             <li>تحجز الـ Draft ذرّياً (منع معالجة مزدوجة عند إعادة إرسال الويبهوك).</li>
             <li>تقرأ الـ Draft الأصلي كامل (أصناف، خصومات، عناوين، شحن).</li>
-            <li>تنشئ Draft مستنسخ (clone) بنفس التفاصيل + تاج <code>_worker_clone</code> + تاج <code>Manual_Order</code>.</li>
+            <li>تنشئ Draft مستنسخ (clone) بنفس التفاصيل + تاج <code>_worker_clone</code> + تاج <code>Manual_Order</code>. أي كود خصم يُحوَّل لخصم ثابت بنفس القيمة (بدون كتابة ملاحظة على الأوردر — التفاصيل في سجل D1).</li>
             <li>تكمّل الـ clone بـ COD gateway الثابت (<code>draftOrderComplete</code>).</li>
             <li>تشيل تاج <code>_worker_clone</code> من الأوردر النهائي (Manual_Order يفضل).</li>
             <li>تحذف الـ Draft الأصلي، وتسجّل كل التفاصيل في D1.</li>
@@ -382,6 +392,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text-p
 
           <h4>NOTES</h4>
           <ul>
+            <li><strong>أكواد الخصم و<code>appliedDiscount</code>:</strong> توثيق Shopify الرسمي يعرّف <code>DraftOrder.appliedDiscount</code> بأنه «الخصم المخصّص على مستوى الأوردر» — أي الخصومات اليدوية فقط. أكواد الخصم تعيش في <code>discountCodes</code> و<code>platformDiscounts</code>، فتظهر دائماً كفرق «غير مُفسَّر» في الحساب بالطرح. هذا سلوك مُصمَّم، وليس باج، و<strong>مستقل تماماً عن نسخة الـ API</strong> (الحقول موجودة منذ 2024-07، ولا يوجد أي changelog يغيّر السلوك في 2026-04/07/10).</li>
+            <li><strong>لماذا لا نعيد تطبيق الكود على الـ clone:</strong> توثيق <code>DraftOrderInput.discountCodes</code> ينصّ على أن الكود يُتخطّى بصمت لو الدرافت غير مؤهّل — في نموذج COD يعني أوردر يخرج بسعر أعلى دون تنبيه. تحويله لخصم ثابت يضمن تطابق السعر 100%، وحارس السعر يتحقق من ذلك في كل عملية.</li>
+            <li>ملاحظة تحويل الخصم لا تُكتب على الأوردر (v1.1.0) — محفوظة في D1 داخل <code>extra.discountInfo.noteText</code>. حقل <code>note</code> على الأوردر مساحة مشتركة مع أدوات أخرى (مثل Duplicate Order Checker) وإبقاؤه نظيفاً يحافظ على وضوح تنبيهاتها.</li>
+            <li>حساب الخصم يعتمد على الطرح (<code>totalDiscounts − orderDisc − lineDisc</code>) وهو دقيق طالما لا توجد خصومات شحن — وهو المؤكَّد في EcomModa. لو تغيّرت هذه السياسة مستقبلاً، يجب التحوّل لقراءة <code>platformDiscounts</code> مباشرة.</li>
             <li>فلاتر تاب السجل هنا نسخة مبسّطة (اختيار واحد لكل فلتر) — مش النظام الكامل multi-select الموصوف في <code>multi-select-filter.md</code>. تُرفَّع لاحقاً لو احتجت.</li>
             <li>الأداة لا تحتوي دخول Flow (POST /) ولا مسار dry-run — أُلغيا عمداً بديلاً كاملاً بالويبهوك الموثوق.</li>
             <li>الحذف اليدوي لـ Admin-UI webhook القديم (Draft order creation) خطوة مطلوبة منفصلة بعد نشر هذه الأداة.</li>
@@ -533,7 +547,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text-p
 // ══════════════════════════════════════════════════════════════
 // §CONFIG
 // ══════════════════════════════════════════════════════════════
-const TOOL_VERSION = 'v1.0.0';
+const TOOL_VERSION = 'v1.1.0';
 const LS_URL       = 'manual_order_creation_worker_url';
 const LS_SECRET    = 'manual_order_creation_worker_secret';
 const LS_ADMIN_URL = 'admin_worker_url';
@@ -556,7 +570,13 @@ function shopifyOrderUrl(orderId) {
   return `https://${SHOP_DOMAIN}/admin/orders/${id}`;
 }
 function orderLink(orderNumber, orderId) {
-  const label = String(orderNumber || '').startsWith('#') ? orderNumber : `#${orderNumber}`;
+  // v1.1.0 — حارس القيمة الفارغة: قبل كده كانت الصفوف اللي مالهاش اسم أوردر
+  // (زي فشل HMAC، أو draft مش موجود) بتعرض النص الحرفي "null#".
+  const raw = (orderNumber === null || orderNumber === undefined) ? '' : String(orderNumber).trim();
+  if (!raw || raw.toLowerCase() === 'null' || raw.toLowerCase() === 'undefined') {
+    return '<span class="order-num">—</span>';
+  }
+  const label = raw.startsWith('#') ? raw : `#${raw}`;
   if (!orderId) return `<span class="order-num">${label}</span>`;
   return `<a href="${shopifyOrderUrl(orderId)}" target="_blank" rel="noopener" class="order-link">${label}</a>`;
 }
