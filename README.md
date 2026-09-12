@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | الواجهة (مراقبة وسجل) | https://ecommoda-dev.github.io/Manual-Order-Creation-Log/ |
-| الـ Worker | https://draft-to-live-cod-manual-order-creation-worker.ecommoda-dev.workers.dev |
+| الـ Worker | https://manual-order-creation-worker.ecommoda-dev.workers.dev |
 
 ## نقطة الدخول الحقيقية
 
