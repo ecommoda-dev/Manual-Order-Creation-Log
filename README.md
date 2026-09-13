@@ -1,4 +1,8 @@
+<div dir="rtl" style="text-align: right;">
+
 # Manual-Order-Creation-Log
+
+![version](https://img.shields.io/badge/version-v1.1.0-blue)
 
 تحويل الـ Draft Order اليدوي (اللي الموظف بيعمله من Shopify Admin) لأوردر
 **COD حقيقي** — clone + `draftOrderComplete` بـ COD gateway ثابت، وبعدها حذف
@@ -29,9 +33,9 @@ POST /webhook   ← Shopify Webhook Subscription · Topic: DRAFT_ORDERS_CREATE
 
 | الملف | إيه ده |
 |---|---|
-| `index.js` | كود الـ Worker — بينشر أوتوماتيك على `main` عبر Workers Builds |
+| `index.js` | كود الـ Worker (`v2.0.0`) — بينشر أوتوماتيك على `main` عبر Workers Builds |
 | `wrangler.toml` | اسم الـ Worker + D1 binding + الـ vars |
-| `index.html` | الواجهة — بتتنشر عبر GitHub Pages |
+| `index.html` | الواجهة (`v2.0.0`) — بتتنشر عبر GitHub Pages |
 | `Index.html` | صفحة تحويل لـ `index.html` (للـ bookmarks القديمة) — صفر منطق |
 | `CLAUDE.md` | قواعد الأداة · فخاخها · خط الأساس · بصمة المهارات |
 
@@ -39,3 +43,7 @@ POST /webhook   ← Shopify Webhook Subscription · Topic: DRAFT_ORDERS_CREATE
 > Cloudflare بيتمسح عند أول push جاي.
 
 التفاصيل التشغيلية كلها في [`CLAUDE.md`](./CLAUDE.md).
+
+آخر تحديث: 13-09-2026 — 14:30
+
+</div>
