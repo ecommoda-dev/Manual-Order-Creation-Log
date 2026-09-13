@@ -1,11 +1,16 @@
+<div dir="rtl" style="text-align: right;">
+
 # تحويل الأوردر اليدوي لـ COD (`Manual-Order-Creation-Log`)
+
+![version](https://img.shields.io/badge/version-v2.0.0-blue)
 
 **بتعمل إيه:** بتحوّل الـ Draft Order اللي الموظف بيعمله يدوي من Shopify Admin
 لأوردر COD حقيقي — clone + `draftOrderComplete` بـ COD gateway ثابت، وبعدها
 حذف الـ Draft الأصلي. السبب: الموظف مالوش scope يختار COD وقت التكميل اليدوي،
 والتكميل من غيره بيكسر التوافق مع Treasury / COD Payment Center.
 **مين بيستخدمها:** بتشتغل لوحدها على ويبهوك · الواجهة للمراقبة والسجل بس
-**الإصدار:** Worker `v1.1.0` · الواجهة `v1.1.0`   ← الاتنين مستقلين، طبيعي يختلفوا
+**الإصدار:** Worker `v2.0.0` · الواجهة `v2.0.0`   ← الاتنين مستقلين، طبيعي يختلفوا
+(اتساووا هنا لأن التسليم واحد غيّر الاتنين — مش قاعدة)
 
 ## الروابط
 
@@ -35,7 +40,9 @@ POST /webhook   ← Shopify Webhook Subscription · Topic: DRAFT_ORDERS_CREATE
 | `?action=` | بيعمل إيه |
 |---|---|
 | `health` (أو فاضي) | اسم الأداة والإصدار و`apiVersion` |
-| `get_monitor_stats` | عدّادات النهار (completed/skipped/failed) + آخر عملية |
+| `get_config` | نسخة الـ Worker — الواجهة بتقارنها بـ `MIN_WORKER_VERSION` عندها |
+| `diag` | فحص ذاتي بدون كتابة: المتغيّرات وأطوالها · D1 · OAuth · صلاحيات التطبيق · `throttleStatus` · التوقيت المحسوب. **صفر قيمة سر** |
+| `get_monitor_stats` | عدّادات النهار (completed/skipped/failed) + **عدّاد مستقل لكل `extra.result`** + آخر عملية |
 | `check_employee` · `register_pin` · `verify_employee` · `log_logout` · `get_employees` | Universal D1 Auth |
 | `get_logs` · `get_logs_count` · `get_logs_export` | السجل |
 
@@ -102,6 +109,19 @@ SELECT type, COUNT(*) AS n, MAX(timestamp) AS last_ts FROM logs WHERE tool = 'ma
 
 **معيار النجاح:** `completed` و`skipped` بيزيدوا بعد النقل، و`failed` مابيقفزش.
 
+🔴 **الاستعلام اللي فوق بيقيس «المحاولات» مش «الكتابة الفعلية».** من `index.js`
+v2.0.0 كل صف بياخد `extra.result` (`ecommoda-constants` §12)، فأي قياس حقيقي
+لازم يفلتر عليه — `completed` لوحدها بقت تشمل `warning` (أوردر اتعمل بسعر
+مختلف أو الـ Draft الأصلي ما اتحذفش):
+
+```sql
+SELECT type, json_extract(extra,'$.result') AS result, COUNT(*) AS n, MAX(timestamp) AS last_ts FROM logs WHERE tool = 'manual_order_creation' GROUP BY type, result ORDER BY n DESC;
+```
+
+⚠️ **الصفوف الأقدم من 13-09-2026 `result` بتاعتها `NULL`** — ده متوقع، ومعناه
+«مش عارفين» مش «نجاح». أي تقرير بيقارن قبل/بعد لازم يفصلهم.
+و⚠️ **`already` ممنوع تتعدّ فشل** (إعادة إرسال الويبهوك — مفيش حاجة كانت مطلوبة).
+
 ## فخاخ الأداة دي
 
 - **`CLONE_TAG = '_worker_clone'` مشتركة مع `stylebox-shopify-order-transfer-worker`.**
@@ -116,7 +136,12 @@ SELECT type, COUNT(*) AS n, MAX(timestamp) AS last_ts FROM logs WHERE tool = 'ma
   ثابت على مستوى الأوردر (تفادي استهلاك استخدام إضافي من الكود). التفاصيل
   الكاملة بتتكتب في D1 → `extra.discountInfo` **مش** على الأوردر (قرار v1.1.0).
 - **`failed` عندها معنيين في نفس القيمة:** فشل تحويل draft، **و** فشل تحقق
-  HMAC. الفرق بينهم في `extra.source`/`notes` مش في الـ `type`.
+  HMAC. من v2.0.0 الفرق بقى صريح في **`extra.result` + `extra.failureKind`**
+  (`'hmac'`) مش مخبّأ في `notes`. القيمة `hmac_failed` مستنية تسجيل في
+  `ecommoda-constants` §7 (شوف «معلّقة» فوق).
+- 🔴 **`needsManualReview: true` في `extra`** = الأوردر اتعمل فعلاً وبعدين حاجة
+  فشلت، والحجز **ما اترفعش** عن قصد — يعني شوبيفاي **مش** هتعيد المحاولة والـ
+  draft محتاج مراجعة يدوية. الصف ده الأهم في السجل كله: التكرار أخطر من المراجعة.
 
 ## استرجاع النسخ القديمة
 
@@ -138,29 +163,46 @@ git show fe27b76:1.0.html
 | ecommoda-html-builder | v7.1.0 |
 | ecommoda-constants | v2.2.0 |
 | shopify-graphql-helper | v2.1.0 |
+| shopify-webhook-helper | (بلا إصدار — مش في نظام الإصدارات) |
 
-آخر مطابقة: 12-09-2026 · `index.js` v1.1.0 · `index.html` v1.1.0
+آخر مطابقة: 13-09-2026 · `index.js` v2.0.0 · `index.html` v2.0.0
 
-🔴 معلّقة:
-- **`ecommoda-constants` §13 — إزاحة القاهرة مكتوبة ثابت في الملفين.**
-  `index.js` سطر 938 (`setUTCHours(-3, 0, 0, 0)` في `get_monitor_stats`) و
-  `index.html` (`toCairo` بـ `+ 3 * 60 * 60 * 1000`). يوم **29-10-2026** مصر
-  بترجع UTC+2 وكل الأرقام دي بتغلط بساعة **من غير أي رسالة** — عدّاد "النهار"
-  هيبدأ الساعة ١ بدل ١٢. الحل: دوال `Intl` القانونية في §13.
-- **`ecommoda-constants` §5b — `ADMIN_WORKER_URL`.** الواجهة لسه بتقراه من
-  `localStorage` (`admin_worker_url`) بدل ما يكون ثابت في `§CONFIG`.
-- **`ecommoda-worker-builder` §12 — `extra.result` / `extra.stage`.** الأداة
-  مابتكتبهمش خالص، فصفوفها القديمة والحالية مالهاش نتيجة صريحة. أي تقرير على
-  الأداة دي لازم يعرض «—» مش «✓» لحد ما تتحوّل.
-- **مفيش `?action=diag`** — مفيش كاشف لحالة المتغيّرات والأسرار.
+> ✅ **المطابقة دي اتعملت فعليًا** (مراجعة كاملة 13-09-2026)، مش نسخ أرقام.
+> قبلها الجدول كان بيقول نفس الإصدارات دي والكود كان **مخالف لـ ٢٥ بند** فيها —
+> وده أسوأ من جدول قديم: بصمة بتكدب بتخلّي أي جرد جاي يعدّي على الأداة.
 
-> التلاتة دول **مؤجَّلين بوعي**: النقل ده بينقل الكود **بايت ببايت** عشان
-> تطابق الـ md5 يفضل دليل إن مفيش كود اتغيّر. أي إصلاح منهم = PR منفصل بعد
-> ما الأنبوب يثبت إنه شغّال.
+✅ **المعلّقات اتقفلت كلها في v2.0.0** — كانت مؤجَّلة بوعي عشان النقل يفضل
+بايت ببايت، والأنبوب أثبت إنه شغّال فاتقفلت:
+
+- ✅ **`ecommoda-constants` §13 — التوقيت.** بقى محسوب بـ `Intl` في الملفين
+  بنفس الدوال بالحرف. **الأداة مش محتاجة أي تدخل يوم 29-10-2026.**
+  الجرد بيرجّع فاضي: `grep -rn "CAIRO_OFFSET\|3 \* 3600 \* 1000\|+ 3 \* 60 \* 60" .`
+- ✅ **`ecommoda-constants` §5b — `ADMIN_WORKER_URL`.** اتشال **خالص** مش اتحوّل
+  لـ constant — الأداة **مابتنادي الأدمن بانل خالص** (نفس سابقة
+  `Stylebox-Price-Sync`: constant مش مستخدم = كود ميت، مش احتياط). و`WORKER_URL`
+  بقى constant في `§CONFIG` بدل حقل إعدادات.
+- ✅ **`extra.result` / `extra.stage`.** كل صف بياخد الاتنين بالمفردات الرسمية
+  (§12). الصفوف **الأقدم من 13-09-2026** لسه بلا `result` — والواجهة بتعرضها
+  **«—» مش «✓»** عن قصد، لأن إحنا فعليًا مش عارفين إن الفعل تم وقتها.
+- ✅ **`?action=diag`** موجود + زرار 🩺 في الإعدادات، ومعاه `?action=get_config`
+  وحارس نسخة الـ Worker في الهيدر (`MIN_WORKER_VERSION = 2.0.0`).
+
+🔴 **معلّقة (بند واحد متبقّي):**
+- **`failed` لسه ليها معنيين** — فشل تحويل **و** فشل HMAC. القيمة `hmac_failed`
+  مستخدمة في `duplicate_order_check` و`stylebox_price_sync`، بس **مش مسجّلة
+  لهذه الأداة** في `ecommoda-constants` §7، والقاعدة (Rule 7) إن القيمة تتسجّل
+  **قبل** أول استخدام مش بعده. فالفصل اتعمل دلوقتي في `extra.result` +
+  `extra.failureKind` بدل ما يكون مخبّأ في `notes`.
+  **الخطوة الجاية:** تسجيل `hmac_failed` في §7 (تعديل على المهارة بـ bump وبند
+  CHANGELOG مصنّف) **ثم** تحويل السطر في الكود — التسلسل ده مش شكلي: العكس
+  بيولّد صفوف يتيمة تحت قيمة مش في الجدول.
+
 
 ## مسائل مفتوحة
 
-- **`index.js` لسه من غير سطر البصمة `// skills:`** — متأجّل عن قصد عشان الملف
+- ✅ **سطر البصمة `// skills:` بقى في `index.js`** (اتقفل 13-09-2026 — التطابق
+  بايت ببايت مابقاش مطلوب بعد ما الأنبوب أثبت إنه شغّال). النص الأصلي للبند:
+- ~~**`index.js` لسه من غير سطر البصمة `// skills:`**~~ — متأجّل عن قصد عشان الملف
   يفضل مطابق بايت ببايت لنسخة كلاودفلير في أول commit. السطر ده مرشّح ليكون
   **commit تشغيل أول build** بعد الربط (§هـ) — وده بيخدم غرضين في نفس الوقت:
   بيشغّل البناء، وبيثبت إن الـ watch paths بتسمح لـ `index.js` ينشر (§13-ب
@@ -176,4 +218,6 @@ git show fe27b76:1.0.html
 
 ---
 
-آخر تحديث: 12-09-2026
+آخر تحديث: 13-09-2026 — 14:30
+
+</div>
