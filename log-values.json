@@ -1,0 +1,37 @@
+{
+  "tool": "manual_order_creation",
+  "since": null,
+  "types": {
+    "login": {
+      "result": null,
+      "stage": null,
+      "desc": "دخول موظف"
+    },
+    "logout": {
+      "result": null,
+      "stage": null,
+      "desc": "خروج موظف"
+    },
+    "completed": {
+      "result": null,
+      "stage": "write",
+      "desc": "الـ draft اتحوّل لأوردر COD"
+    },
+    "failed": {
+      "result": "error",
+      "stage": [
+        "lookup",
+        "write"
+      ],
+      "desc": "تحويل الـ draft فشل"
+    },
+    "skipped": {
+      "result": [
+        "already",
+        "rejected"
+      ],
+      "stage": "lookup",
+      "desc": "الـ draft اتعالج قبل كده (إعادة إرسال ويبهوك) — مفيش حاجة مطلوبة"
+    }
+  }
+}
