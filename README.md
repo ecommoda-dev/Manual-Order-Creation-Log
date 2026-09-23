@@ -36,7 +36,7 @@ POST /webhook   ← Shopify Webhook Subscription · Topic: DRAFT_ORDERS_CREATE
 | `index.js` | كود الـ Worker (`v2.0.0`) — بينشر أوتوماتيك على `main` عبر Workers Builds |
 | `wrangler.toml` | اسم الـ Worker + D1 binding + الـ vars |
 | `index.html` | الواجهة (`v2.0.0`) — بتتنشر عبر GitHub Pages |
-| `Index.html` | صفحة تحويل لـ `index.html` (للـ bookmarks القديمة) — صفر منطق |
+| ~~`Index.html`~~ | اتشالت — 23-09-2026، قرار أحمد. الرابط الوحيد: `https://ecommoda-dev.github.io/Manual-Order-Creation-Log/` |
 | `CLAUDE.md` | قواعد الأداة · فخاخها · خط الأساس · بصمة المهارات |
 
 > ⚠️ **الريبو ده هو المصدر الوحيد للكود بعد الربط.** أي لصق في داشبورد
