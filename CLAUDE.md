@@ -159,13 +159,21 @@ git show fe27b76:1.0.html
 
 | المهارة | الإصدار وقت آخر تعديل |
 |---|---|
-| ecommoda-worker-builder | v3.1.0 |
+| ecommoda-worker-builder | v3.7.0 |
 | ecommoda-html-builder | v7.1.0 |
-| ecommoda-constants | v2.2.0 |
+| ecommoda-constants | v3.1.0 |
 | shopify-graphql-helper | v2.1.0 |
 | shopify-webhook-helper | (بلا إصدار — مش في نظام الإصدارات) |
 
-آخر مطابقة: 13-09-2026 · `index.js` v2.0.0 · `index.html` v2.0.0
+آخر مطابقة: 24-09-2026 · `index.js` v2.0.1 · `index.html` v2.0.0
+
+✅ **الحارس الديناميكي لقيم اللوج (الطبقة ٥ — worker-builder Step 7-ج) اتنفّذ
+في `index.js` v2.0.1 (24-09-2026)**، مع استبدال `check-log-values.mjs`
+بالنسخة المصلَّحة اللي بتمسك object shorthand (`{ tool, type }`). `writeLog`
+هي الأنكور الوحيد في الأداة دي (مفيش `writeLogsBatch`)، و`LOG_REGISTRY` مبني
+من `log-values.json` تحت `§LOG-REG`. المراجعة الأولى طلّعت `check-log-values.mjs`
+عدّى `exit 0` من غير أي قيمة ناقصة أو ديناميكية — كل نداءات `writeLog` بتستخدم
+مفتاح `type` صريح (`LOG_TYPES.X`).
 
 > ✅ **المطابقة دي اتعملت فعليًا** (مراجعة كاملة 13-09-2026)، مش نسخ أرقام.
 > قبلها الجدول كان بيقول نفس الإصدارات دي والكود كان **مخالف لـ ٢٥ بند** فيها —
@@ -218,6 +226,6 @@ git show fe27b76:1.0.html
 
 ---
 
-آخر تحديث: 13-09-2026 — 14:30
+آخر تحديث: 24-09-2026 — الحارس الديناميكي لقيم اللوج (الطبقة ٥) + check-log-values.mjs المصلَّح
 
 </div>
